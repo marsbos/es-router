@@ -6,15 +6,21 @@ customElements.define('shop-page', class extends LitElement {
 
   static get properties() {
     return {
-      route: String,
+      head: String,
+      tail: String,
     }
   }
 
   connectedCallback() {
-    const unregister = route(this) // returns proxy: {}
-    [`browse`](({head, tail}) => {
-      console.log('shop, head', head);
-      console.log('shop, tail', tail);
+    const unregister = route() // returns proxy: {}
+    .browse(({head, tail}) => {
+      console.log('shop.browse, head', head);
+      console.log('shop.browse, tail', tail);
+      return { head, tail };
+    })
+    .buy(({ head, tail }) => {
+      console.log('shop.buy, head', head);
+      console.log('shop.buy, tail', tail);
       return { head, tail };
     })
     .use(({ head, tail }) => {
@@ -27,11 +33,9 @@ customElements.define('shop-page', class extends LitElement {
   render() {
     return html`
       <div>
-        Shop page. On route: ${this.route.head}
-        tail: ${this.route.tail}
-        <es-route-anchor>
-          <a href="${this.route.head}/browse">Browse shop</a>
-        </es-route-anchor>
+        Shop page. On route: ${this.head}
+        tail: ${this.tail}
+        
       </div>
     `;
   }

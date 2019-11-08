@@ -6,21 +6,22 @@ customElements.define('todo-add', class extends LitElement {
 
   static get properties() {
     return {
-      route: Object,
+      head: String,
+      tail: String,
     }
   }
 
   connectedCallback() {
-    const unregister = route(this) // returns proxy: {}
+    const unregister = route() // returns proxy: {}
     ['292828282'](({ head, tail }) => {
-      console.log('todo-add, head', head);
-      console.log('todo-add, tail', tail);
-      return tail;
+      return async()=>{
+        await import('./todo-details.js');
+        return `<todo-details .route="${head}"></todo-details>`;
+      }
     })
-    .use(({ head, tail }) => {
-      this.route = head;
-      this.requestUpdate('route');
-      return tail;
+    .use(tpl => {
+      this.renderRoot.querySelectorAll('#routes').item(0).innerHTML = tpl;
+      this.requestUpdate();
     });
     super.connectedCallback();
   }
@@ -28,9 +29,10 @@ customElements.define('todo-add', class extends LitElement {
   render() {
     return html`
       <div>
-        Add todo. On route: ${this.route.head}
-        tail: ${this.route.tail}
+        Add todo. On route: ${this.head}
+        tail: ${this.tail}
       </div>
+      <div id="routes"></div>
     `;
   }
 });
