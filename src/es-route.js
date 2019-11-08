@@ -1,6 +1,6 @@
 const pipeFromEvent = (eventDispatcher, event) => (finalizer,...cb) => {
   //const isChildOfEventDispatcher = isChildOf(eventDispatcher);
-  const listener = ({ detail: { url, path } }) => {
+  const listener = async({ detail: { url, path } }) => {
     const match = cb.find(c => {
       // match with location.pathname
       const locationPath = location.pathname;
@@ -27,7 +27,8 @@ const pipeFromEvent = (eventDispatcher, event) => (finalizer,...cb) => {
       }
     });
     if (match) {
-      const entry = finalizer(match.callback({ head: match.head, tail: match.tail }));
+      const cfgCb = match.callback({ head: match.head, tail: match.tail });
+      finalizer(await cfgCb());
       history.pushState({}, '', `${match.head}`);
     }
   };
@@ -37,8 +38,8 @@ const pipeFromEvent = (eventDispatcher, event) => (finalizer,...cb) => {
   };
 };
 
-export const route = eventDispatcher => {
-  const rListener = pipeFromEvent(eventDispatcher, 'navigate-changed');
+export const route = () => {
+  const rListener = pipeFromEvent(document, 'navigate-changed');
   let listeners = [];
   const handler = {
     get(target, key, receiver) {
@@ -74,7 +75,7 @@ export const route = eventDispatcher => {
 
 const template = document.createElement('template');
 template.innerHTML = `
-<slot></slot>
+<slot id="slot"></slot>
 `;
 (() => {
   customElements.define(
@@ -94,6 +95,42 @@ template.innerHTML = `
 
       disconnectedCallback() {
         this.removeEventListener('click', this._elementClickEventListener, true);
+      }
+
+      _getSlottedElements(tagName) {
+        return () => Array.from(this.querySelectorAll(tagName));
+      }
+
+      _elementClickEventListener(evt) {
+        if (this._getSlottedElements().find((a) => a === evt.target)) {
+          evt.preventDefault();
+
+          this.dispatchEvent(new CustomEvent('navigate-changed', 
+            { detail: { url: evt.target.pathname, path: evt.path }, bubbles: true, composed: true }));
+        }
+      }
+    }
+  );
+})();
+
+(() => {
+  customElements.define(
+    'es-route-render',
+    class extends HTMLElement {
+      _prepareDom() {
+        this.attachShadow({ mode: 'open' });
+        this.shadowRoot.appendChild(template.content.cloneNode(true));
+        const slot = this.shadowRoot.querySelector('#slot');
+        slot.addEventListener('slotchange', e => {
+          console.log('light dom children changed!', e);
+        });
+      }
+
+      connectedCallback() {
+        this._prepareDom();
+      }
+
+      disconnectedCallback() {
       }
 
       _getSlottedElements(tagName) {
