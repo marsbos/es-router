@@ -1,2 +1,2 @@
-# es-router
-Javascript routing, zero configuration
+### Playground for a router.
+Javascript routing, zero configuration, builder pattern/fluid
